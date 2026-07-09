@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>UniPilot SL — Varsity Day Manager</title>
+  <meta name="description" content="Today's lectures, deadlines, free time and your commute — built for Sri Lankan university students.">
+  <meta name="theme-color" content="#1B2A2F">
+
+  <!-- 
+    PWA hooks commented out for crisp production deployment. 
+    Uncomment these if you add manifest.json and icons to your Vercel project directory.
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UniPilot SL">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --paper: #F3EADA;
+      --card: #FBF6EC;
+      --ink: #1B2A2F;
+      --ink-soft: #33474D;
+      --green: #1F5C4A;
+      --green-dark: #153F33;
+      --yellow: #F2B705;
+      --rust: #C1502E;
+      --charcoal: #262220;
+      --line: rgba(27, 42, 47, 0.14);
+      --line-strong: rgba(27, 42, 47, 0.5);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 9px;
+      --font-display: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden; 
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 12% 8%, rgba(31, 92, 74, 0.10), transparent 40%),
+        radial-gradient(circle at 90% 0%, rgba(242, 183, 5, 0.14), transparent 45%),
+        var(--paper);
+      color: var(--charcoal);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      margin: 0;
+    }
+
+    :focus-visible {
+      outline: 3px solid var(--green);
+      outline-offset: 2px;
+    }
+
+    /* Fixed Viewport Flex Matrix Layout */
+    .app-container {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 30px;
+      padding: 16px;
+      height: 100%;
+      width: 100%;
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .shell {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Scrollable Data Workspace Panel Box Container */
+    .scrollable-workspace {
+      flex: 1;
+      min-height: 0; 
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    /* ---------- Preview Frame Sidebar Area ---------- */
+    .preview-sidebar {
+      width: 360px;
+      flex-shrink: 0;
+      display: none;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .smartphone {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-height: 760px;
+      background: var(--ink);
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow: 0 20px 40px rgba(27, 42, 47, 0.25);
+    }
+
+    .smartphone-screen {
+      width: 100%;
+      height: 100%;
+      background: var(--paper);
+      border-radius: 32px;
+      overflow: hidden;
+      border: none;
+    }
+
+    /* ---------- Header ---------- */
+    .app-header {
+      padding-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .app-header__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .app-header__title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 2px;
+    }
+
+    .app-header_title2 {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+
+    .app-header__date {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-top: 2px;
+    }
+
+    /* ---------- Departure Board Hero Box ---------- */
+    .board {
+      background: var(--ink);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      box-shadow: 0 6px 0 rgba(27, 42, 47, 0.14);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .board::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 3px);
+      pointer-events: none;
+    }
+
+    .board__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .board__label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      font-weight: 700;
+    }
+
+    .board__status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.18);
+    }
+
+    .board__status-dot.is-live {
+      background: #6FCB9F;
+      box-shadow: 0 0 0 4px rgba(111, 203, 159, 0.22);
+    }
+
+    .board__main {
+      font-family: var(--font-mono);
+      color: var(--paper);
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 6px;
+      line-height: 1.2;
+    }
+
+    .board__sub {
+      color: rgba(243, 234, 218, 0.72);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .board__flaps {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .board__flap {
+      background: rgba(243, 234, 218, 0.08);
+      border: 1px solid rgba(243, 234, 218, 0.16);
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .board__flap-num {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--paper);
+    }
+
+    .board__flap-cap {
+      font-size: 8.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(243, 234, 218, 0.55);
+      margin-top: 1px;
+    }
+
+    /* ---------- Tabs Navigation Menu ---------- */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(27, 42, 47, 0.06);
+      padding: 4px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 4px;
+      border-radius: 999px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+
+    .tab.is-active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .panel {
+      display: none;
+      height: 100%;
+    }
+
+    .panel.is-active {
+      display: block;
+    }
+
+    /* ---------- Section Content Typography ---------- */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin: 12px 2px 6px;
+    }
+
+    .section-title:first-child {
+      margin-top: 2px;
+    }
+
+    /* ---------- Horizontal Cards Row ---------- */
+    .free-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      flex-shrink: 0;
+    }
+
+    .free-chip {
+      flex-shrink: 0;
+      background: var(--green);
+      color: var(--paper);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 11.5px;
+    }
+
+    .free-chip b {
+      font-family: var(--font-mono);
+      display: block;
+      font-size: 12px;
+    }
+
+    /* ---------- Element Cards Structure ---------- */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      cursor: pointer;
+      border-left: 4px solid var(--green);
+    }
+
+    .card.status-now {
+      border-left-color: var(--rust);
+      background: linear-gradient(0deg, rgba(193, 80, 46, 0.04), rgba(193, 80, 46, 0.04)), var(--card);
+    }
+
+    .card.status-done {
+      opacity: .5;
+    }
+
+    .card.status-urgent {
+      border-left-color: var(--rust);
+    }
+
+    .card.status-soon {
+      border-left-color: var(--yellow);
+    }
+
+    .card__time {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink);
+      background: rgba(27, 42, 47, 0.06);
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+      min-width: 56px;
+      line-height: 1.3;
+      flex-shrink: 0;
+    }
+
+    .card__body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card__title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--ink);
+    }
+
+    .card__meta {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-top: 2px;
+    }
+
+    .card__tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+      margin-top: 4px;
+    }
+
+    .tag-now { background: var(--rust); color: #fff; }
+    .tag-next { background: var(--yellow); color: var(--ink); }
+    .tag-done { background: rgba(27, 42, 47, 0.1); color: var(--ink-soft); }
+
+    .empty {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--ink-soft);
+      background: var(--card);
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius-md);
+    }
+
+    .empty__title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 14.5px;
+    }
+
+    .empty__cta {
+      margin-top: 10px;
+      display: inline-block;
+      background: var(--ink);
+      color: var(--paper);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .day-group__label {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin: 12px 2px 6px;
+    }
+
+    /* ---------- Transit Area ---------- */
+    .transit-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 8px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .transit-card__icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      color: #fff;
+    }
+
+    .transit-card__title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .transit-card__desc {
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      margin-top: 1px;
+    }
+
+    .transit-card__arrow {
+      margin-left: auto;
+      color: var(--ink-soft);
+      font-size: 14px;
+    }
+
+    .settings-box {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .settings-box label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .settings-box .field-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .settings-box input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1.5px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+    }
+
+    /* ---------- Form Inputs System ---------- */
+    .field { margin-bottom: 10px; }
+    .field label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      margin-bottom: 4px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .chip-select { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip-select button {
+      border: 1.5px solid var(--line-strong);
+      background: #fff;
+      color: var(--ink-soft);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip-select button.is-selected { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 11px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-danger { background: transparent; color: var(--rust); border: 1.5px solid var(--rust); margin-top: 6px; }
+
+    /* ---------- Bottom Fixed Controls (Mobile UI fallback) ---------- */
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--ink);
+      display: flex;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
+      z-index: 20;
+    }
+
+    .bottom-nav__item {
+      flex: 1;
+      background: none;
+      border: none;
+      color: rgba(243, 234, 218, 0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 10px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      padding: 4px 0;
+      cursor: pointer;
+    }
+
+    .bottom-nav__item.is-active { color: var(--yellow); }
+    .bottom-nav__icon { font-size: 16px; }
+
+    .fab {
+      position: fixed;
+      right: 16px;
+      bottom: 68px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--rust);
+      color: #fff;
+      border: none;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(193, 80, 46, 0.35);
+      cursor: pointer;
+      z-index: 21;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fab.is-hidden { display: none; }
+
+    /* ---------- Modal sheets ---------- */
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(27, 42, 47, 0.4);
+      z-index: 30;
+      display: none;
+    }
+    .sheet-backdrop.is-open { display: block; }
+    .sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 460px;
+      margin: 0 auto;
+      background: var(--paper);
+      border-radius: 20px 20px 0 0;
+      padding: 16px;
+      max-height: 80vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform .2s ease;
+    }
+    .sheet-backdrop.is-open .sheet { transform: translateY(0); }
+    .sheet__handle { width: 32px; height: 4px; background: var(--line-strong); border-radius: 99px; margin: 0 auto 12px; }
+    .sheet__title { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 84px;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease, transform .15s ease;
+    }
+    .toast.is-open { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+    .app-promo-banner {
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-top: 14px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .app-promo-banner h3 { color: var(--yellow); font-size: 13.5px; }
+    .app-promo-banner p { margin: 0; font-size: 11.5px; color: rgba(243, 234, 218, 0.8); }
+
+    .footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin: 14px 0 4px;
+      flex-shrink: 0;
+    }
+    .footer-actions { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
+    .footer-actions button { background: none; border: none; color: var(--green); font-size: 11px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+    /* Desktop Media View Adjustments (Lock Viewport Frame Layout) */
+    @media (min-width: 850px) {
+      .bottom-nav, .fab { display: none !important; }
+      .tabs { display: flex; }
+      .preview-sidebar { display: flex; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <main class="main-content">
+      <header class="app-header">
+        <div class="app-header__eyebrow">UniPilot SL</div>
+        <h1 class="app-header__title">Varsity Day Manager</h1>
+        <div class="app-header_title2">By Manula Gunawardhana</div>
+        <div class="app-header__date" id="todayDateLabel">—</div>
+      </header>
+
+      <div class="shell">
+        <section class="board" id="boardHero" aria-live="polite">
+          <div class="board__row">
+            <span class="board__label" id="boardLabel">NEXT UP</span>
+            <span class="board__status-dot" id="boardDot"></span>
+          </div>
+          <div class="board__main" id="boardMain">Loading timetable…</div>
+          <div class="board__sub" id="boardSub"></div>
+          <div class="board__flaps" id="boardFlaps"></div>
+        </section>
+
+        <nav class="tabs" role="tablist" aria-label="Sections">
+          <button class="tab is-active" data-tab="today" role="tab">Today</button>
+          <button class="tab" data-tab="deadlines" role="tab">Deadlines</button>
+          <button class="tab" data-tab="timetable" role="tab">Timetable</button>
+          <button class="tab" data-tab="transit" role="tab">Transit</button>
+        </nav>
+
+        <div class="scrollable-workspace">
+          <!-- TODAY -->
+          <section class="panel is-active" id="panel-today">
+            <div class="section-title">Free time today</div>
+            <div class="free-row" id="freeRow"></div>
+            <div class="section-title">Lectures today</div>
+            <div id="todayList"></div>
+          </section>
+
+          <!-- DEADLINES -->
+          <section class="panel" id="panel-deadlines">
+            <div class="section-title">Coming up</div>
+            <div id="deadlineList"></div>
+          </section>
+
+          <!-- TIMETABLE -->
+          <section class="panel" id="panel-timetable">
+            <div class="section-title">Weekly timetable</div>
+            <div id="timetableList"></div>
+          </section>
+
+          <!-- TRANSIT -->
+          <section class="panel" id="panel-transit">
+            <div class="section-title">Commute shortcuts</div>
+            <a class="transit-card" id="mapsLink" href="https://maps.google.com/" target="_blank" rel="noopener">
+              <span class="transit-card__icon" style="background:var(--green);">📍</span>
+              <span>
+                <span class="transit-card__title">Directions to campus</span>
+                <span class="transit-card__desc" id="mapsDesc">Set your campus address below</span>
+              </span>
+              <span class="transit-card__arrow">↗</span>
+            </a>
+            <a class="transit-card" href="https://rdmns.lk/" target="_blank" rel="noopener">
+              <span class="transit-card__icon" style="background:var(--rust);">🚆</span>
+              <span>
+                <span class="transit-card__title">RDMNS.lk — live train tracking</span>
+                <span class="transit-card__desc">Crowd-sourced tracking data</span>
+              </span>
+              <span class="transit-card__arrow">↗</span>
+            </a>
+            <a class="transit-card" href="https://eservices.railway.gov.lk/schedule/searchTrain.action?lang=en" target="_blank" rel="noopener">
+              <span class="transit-card__icon" style="background:var(--ink);">🎫</span>
+              <span>
+                <span class="transit-card__title">Sri Lanka Railways Schedules</span>
+                <span class="transit-card__desc">Official train schedules</span>
+              </span>
+              <span class="transit-card__arrow">↗</span>
+            </a>
+            <div class="settings-box">
+              <label for="campusInput">My campus / faculty address</label>
+              <div class="field-row">
+                <input type="text" id="campusInput" placeholder="e.g. University of Moratuwa">
+                <button id="saveCampusBtn" style="border:none; border-radius:9px; padding:0 12px; background:var(--ink); color:var(--paper); font-weight:700; cursor:pointer;">Save</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="app-promo-banner">
+          <h3>Android &amp; iOS App Coming Soon</h3>
+          <p>Access this native single-viewport interface safely anytime via your mobile browser link instance.</p>
+        </section>
+
+        <footer class="footer-note">
+          Saved safely inside local storage sandbox data array parameters.
+          <div class="footer-actions">
+            <button id="exportBtn">Export</button>
+            <button id="importBtn">Import</button>
+            <button id="resetBtn">Reset</button>
+          </div>
+        </footer>
+      </div>
+    </main>
+
+    <aside class="preview-sidebar" aria-hidden="true">
+      <div class="smartphone">
+        <iframe class="smartphone-screen" src="about:blank" id="mobileFrame"></iframe>
+      </div>
+    </aside>
+  </div>
+
+  <input type="file" id="importFile" accept="application/json" style="display:none;">
+
+  <nav class="bottom-nav" aria-label="Primary">
+    <button class="bottom-nav__item is-active" data-tab="today"><span class="bottom-nav__icon">📅</span>Today</button>
+    <button class="bottom-nav__item" data-tab="deadlines"><span class="bottom-nav__icon">⏳</span>Deadlines</button>
+    <button class="bottom-nav__item" data-tab="timetable"><span class="bottom-nav__icon">🗂️</span>Timetable</button>
+    <button class="bottom-nav__item" data-tab="transit"><span class="bottom-nav__icon">🚌</span>Transit</button>
+  </nav>
+
+  <button class="fab" id="fabBtn" aria-label="Add">+</button>
+
+  <div class="sheet-backdrop" id="sheetBackdrop">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sheet__handle"></div>
+      <div class="sheet__title" id="sheetTitle">Add Item</div>
+      <div id="sheetBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const LS_CLASSES = "unipilot_classes";
+      const LS_DEADLINES = "unipilot_deadlines";
+      const LS_SETTINGS = "unipilot_settings";
+
+      const load = (key, fallback) => {
+        try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; }
+      };
+      const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+      let classes = load(LS_CLASSES, []);
+      let deadlines = load(LS_DEADLINES, []);
+      let settings = load(LS_SETTINGS, { campus: "" });
+
+      const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+      const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; 
+
+      function toMinutes(hhmm) {
+        if(!hhmm) return 0;
+        const [h, m] = hhmm.split(":").map(Number);
+        return h * 60 + m;
+      }
+      function fmtTime(hhmm) {
+        if(!hhmm) return "";
+        let [h, m] = hhmm.split(":").map(Number);
+        const suffix = h >= 12 ? "pm" : "am";
+        h = h % 12; if (h === 0) h = 12;
+        return h + ":" + String(m).padStart(2, "0") + suffix;
+      }
+      function fmtDuration(mins) {
+        mins = Math.max(0, Math.round(mins));
+        const h = Math.floor(mins / 60), m = mins % 60;
+        if (h && m) return h + "h " + m + "m";
+        if (h) return h + "h";
+        return m + "m";
+      }
+      function nowMinutes(d) { return d.getHours() * 60 + d.getMinutes(); }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('is-open');
+        setTimeout(() => t.classList.remove('is-open'), 2500);
+      }
+
+      function renderDate() {
+        const d = new Date();
+        const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('todayDateLabel').textContent = d.toLocaleDateString('en-GB', opts);
+      }
+
+      function todaysClasses() {
+        const dow = new Date().getDay();
+        return classes.filter(c => c.day === dow).sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+      }
+
+      function computeFreeGaps(list) {
+        const gaps = [];
+        for (let i = 0; i < list.length - 1; i++) {
+          const gapStart = toMinutes(list[i].end);
+          const gapEnd = toMinutes(list[i + 1].start);
+          if (gapEnd - gapStart >= 20) {
+            gaps.push({ start: gapStart, end: gapEnd, mins: gapEnd - gapStart });
+          }
+        }
+        return gaps;
+      }
+
+      function classStatus(c, nowM) {
+        const s = toMinutes(c.start), e = toMinutes(c.end);
+        if (nowM >= s && nowM < e) return "now";
+        if (nowM < s) return "upcoming";
+        return "done";
+      }
+
+      function renderToday() {
+        const list = todaysClasses();
+        const now = new Date();
+        const nowM = nowMinutes(now);
+
+        const freeRow = document.getElementById('freeRow');
+        const gaps = computeFreeGaps(list);
+        freeRow.innerHTML = "";
+        if (!gaps.length) {
+          const span = document.createElement('div');
+          span.className = 'free-chip';
+          span.style.background = 'var(--ink-soft)';
+          span.textContent = list.length < 2 ? "Add classes to see gaps" : "No breaks today";
+          freeRow.appendChild(span);
+        } else {
+          gaps.forEach(g => {
+            const el = document.createElement('div');
+            el.className = 'free-chip';
+            const startH = String(Math.floor(g.start / 60)).padStart(2, '0');
+            const startM = String(g.start % 60).padStart(2, '0');
+            const endH = String(Math.floor(g.end / 60)).padStart(2, '0');
+            const endM = String(g.end % 60).padStart(2, '0');
+            el.innerHTML = `Break ${startH}:${startM}–${endH}:${endM}<b>${fmtDuration(g.mins)}</b>`;
+            freeRow.appendChild(el);
+          });
+        }
+
+        const container = document.getElementById('todayList');
+        container.innerHTML = "";
+        if (!list.length) {
+          container.innerHTML = `
+          <div class="empty">
+            <div class="empty__title">No lectures today 🎉</div>
+            <button class="empty__cta" id="emptyAddBtn">Add a class</button>
+          </div>`;
+          document.getElementById('emptyAddBtn').addEventListener('click', () => openClassSheet(null, new Date().getDay()));
+          return;
+        }
+        list.forEach(c => {
+          const status = classStatus(c, nowM);
+          const card = document.createElement('div');
+          card.className = 'card' + (status === 'now' ? ' status-now' : '') + (status === 'done' ? ' status-done' : '');
+          card.innerHTML = `
+          <div class="card__time">${fmtTime(c.start)}<br>${fmtTime(c.end)}</div>
+          <div class="card__body">
+            <div class="card__title">${escapeHtml(c.subject)}</div>
+            <div class="card__meta">${escapeHtml(c.location || "No hall set")}</div>
+            ${status === 'now' ? '<span class="card__tag tag-now">Now</span>' : ''}
+            ${status === 'upcoming' ? '<span class="card__tag tag-next">Next</span>' : ''}
+          </div>`;
+          card.addEventListener('click', () => openClassSheet(c));
+          container.appendChild(card);
+        });
+      }
+
+      function renderBoard() {
+        const now = new Date();
+        const nowM = nowMinutes(now);
+        const list = todaysClasses();
+
+        const current = list.find(c => classStatus(c, nowM) === 'now');
+        const upcoming = list.filter(c => classStatus(c, nowM) === 'upcoming');
+
+        const label = document.getElementById('boardLabel');
+        const main = document.getElementById('boardMain');
+        const sub = document.getElementById('boardSub');
+        const dot = document.getElementById('boardDot');
+        const flaps = document.getElementById('boardFlaps');
+        flaps.innerHTML = "";
+
+        if (current) {
+          label.textContent = "IN PROGRESS";
+          dot.classList.add('is-live');
+          main.textContent = current.subject;
+          sub.textContent = (current.location || "No hall") + " · ends " + fmtTime(current.end);
+          addFlap(flaps, fmtDuration(toMinutes(current.end) - nowM), "LEFT");
+          if (upcoming[0]) addFlap(flaps, fmtTime(upcoming[0].start), "NEXT");
+        } else if (upcoming.length) {
+          const next = upcoming[0];
+          dot.classList.remove('is-live');
+          const mins = toMinutes(next.start) - nowM;
+          label.textContent = mins <= 20 ? "STARTING SOON" : "NEXT UP";
+          main.textContent = next.subject;
+          sub.textContent = (next.location || "No hall") + " · starts " + fmtTime(next.start);
+          addFlap(flaps, fmtDuration(mins), "IN");
+        } else {
+          dot.classList.remove('is-live');
+          label.textContent = "TIMETABLE STATUS";
+          main.textContent = list.length ? "Done for today" : "No classes scheduled";
+          sub.textContent = "Manage records from the panels below.";
+        }
+      }
+
+      function addFlap(container, num, cap) {
+        const el = document.createElement('div');
+        el.className = 'board__flap';
+        el.innerHTML = `<div class="board__flap-num">${num}</div><div class="board__flap-cap">${cap}</div>`;
+        container.appendChild(el);
+      }
+
+      function fmtCountdownFull(dueDateStr) {
+        const diff = new Date(dueDateStr) - new Date();
+        if (diff <= 0) return { text: "Overdue", cls: "status-urgent" };
+        const mins = Math.floor(diff / 60000);
+        const days = Math.floor(mins / 1440);
+        const hrs = Math.floor((mins % 1440) / 60);
+        if (days >= 1) return { text: `${days}d left`, cls: "" };
+        return { text: `${hrs}h left`, cls: "status-soon" };
+      }
+
+      function renderDeadlines() {
+        const container = document.getElementById('deadlineList');
+        container.innerHTML = "";
+        const sorted = [...deadlines].sort((a, b) => new Date(a.due) - new Date(b.due));
+        if (!sorted.length) {
+          container.innerHTML = `
+          <div class="empty">
+            <div class="empty__title">Nothing due 🙌</div>
+            <button class="empty__cta" id="emptyDeadlineBtn">Add a deadline</button>
+          </div>`;
+          document.getElementById('emptyDeadlineBtn').addEventListener('click', () => openDeadlineSheet(null));
+          return;
+        }
+
+        sorted.forEach(d => {
+          const badge = fmtCountdownFull(d.due);
+          const card = document.createElement('div');
+          card.className = `card ${badge.cls}`;
+          const dateFormatted = new Date(d.due).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          card.innerHTML = `
+            <div class="card__time" style="font-size:10px;">${badge.text}</div>
+            <div class="card__body">
+              <div class="card__title">${escapeHtml(d.title)}</div>
+              <div class="card__meta">${escapeHtml(d.module || "General")} · ${dateFormatted}</div>
+            </div>`;
+          card.addEventListener('click', () => openDeadlineSheet(d));
+          container.appendChild(card);
+        });
+      }
+
+      function renderTimetable() {
+        const container = document.getElementById('timetableList');
+        container.innerHTML = "";
+
+        if(!classes.length) {
+          container.innerHTML = `
+          <div class="empty">
+            <div class="empty__title">Your Timetable is Empty</div>
+            <button class="empty__cta" id="emptyTtBtn">Add your first class</button>
+          </div>`;
+          document.getElementById('emptyTtBtn').addEventListener('click', () => openClassSheet(null));
+          return;
+        }
+
+        DAY_ORDER.forEach(dayIndex => {
+          const dayClasses = classes.filter(c => c.day === dayIndex).sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+          if(!dayClasses.length) return;
+
+          const group = document.createElement('div');
+          group.innerHTML = `<div class="day-group__label">${DAY_NAMES[dayIndex]}</div>`;
+          
+          dayClasses.forEach(c => {
+            const row = document.createElement('div');
+            row.className = 'card';
+            row.innerHTML = `
+              <div class="card__time">${fmtTime(c.start)}<br>${fmtTime(c.end)}</div>
+              <div class="card__body">
+                <div class="card__title">${escapeHtml(c.subject)}</div>
+                <div class="card__meta">${escapeHtml(c.location || "No Location")}</div>
+              </div>`;
+            row.addEventListener('click', () => openClassSheet(c));
+            group.appendChild(row);
+          });
+          container.appendChild(group);
+        });
+      }
+
+      function renderTransit() {
+        const mapsLink = document.getElementById('mapsLink');
+        const mapsDesc = document.getElementById('mapsDesc');
+        const campusInput = document.getElementById('campusInput');
+
+        if(settings.campus) {
+          mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.campus)}`;
+          mapsDesc.textContent = settings.campus;
+          campusInput.value = settings.campus;
+        } else {
+          mapsLink.href = "https://maps.google.com/";
+          mapsDesc.textContent = "Set your campus address below";
+          campusInput.value = "";
+        }
+      }
+
+      function openSheet(title, html) {
+        document.getElementById('sheetTitle').textContent = title;
+        document.getElementById('sheetBody').innerHTML = html;
+        document.getElementById('sheetBackdrop').classList.add('is-open');
+      }
+
+      function closeSheet() {
+        document.getElementById('sheetBackdrop').classList.remove('is-open');
+      }
+
+      function openClassSheet(c = null, fallbackDay = 1) {
+        const isEdit = !!c;
+        const currentDay = isEdit ? c.day : fallbackDay;
+        
+        let daysHtml = "";
+        DAY_ORDER.forEach(d => {
+          daysHtml += `<button type="button" class="day-chip-btn ${d === currentDay ? 'is-selected' : ''}" data-day="${d}">${DAY_SHORT[d]}</button>`;
+        });
+
+        const html = `
+          <form id="classForm" onsubmit="return false;">
+            <div class="field">
+              <label>Subject Name</label>
+              <input type="text" id="formSubj" value="${isEdit ? escapeHtml(c.subject) : ''}" required placeholder="e.g. CS3022 Software Architecture">
+            </div>
+            <div class="field">
+              <label>Location / Hall</label>
+              <input type="text" id="formLoc" value="${isEdit ? escapeHtml(c.location) : ''}" placeholder="e.g. Seminar Room 2">
+            </div>
+            <div class="field">
+              <label>Day of Week</label>
+              <div class="chip-select" id="formDaySelect">${daysHtml}</div>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label>Start Time</label>
+                <input type="time" id="formStart" value="${isEdit ? c.start : '08:30'}" required>
+              </div>
+              <div class="field">
+                <label>End Time</label>
+                <input type="time" id="formEnd" value="${isEdit ? c.end : '10:30'}" required>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary" id="saveClassBtnForm">Save Class</button>
+            ${isEdit ? '<button type="button" class="btn btn-danger" id="deleteClassBtnForm">Delete Class</button>' : ''}
+          </form>
+        `;
+
+        openSheet(isEdit ? "Edit Lecture Slot" : "Add Lecture Slot", html);
+
+        const chips = document.querySelectorAll('.day-chip-btn');
+        let selectedDay = currentDay;
+        chips.forEach(ch => {
+          ch.addEventListener('click', function() {
+            chips.forEach(x => x.classList.remove('is-selected'));
+            this.classList.add('is-selected');
+            selectedDay = parseInt(this.getAttribute('data-day'));
+          });
+        });
+
+        document.getElementById('saveClassBtnForm').addEventListener('click', () => {
+          const subject = document.getElementById('formSubj').value.trim();
+          const location = document.getElementById('formLoc').value.trim();
+          const start = document.getElementById('formStart').value;
+          const end = document.getElementById('formEnd').value;
+
+          if(!subject || !start || !end) { showToast("Please completely fill required items."); return; }
+
+          if(isEdit) {
+            const idx = classes.findIndex(x => x.id === c.id);
+            if(idx !== -1) classes[idx] = { id: c.id, subject, location, day: selectedDay, start, end };
+          } else {
+            classes.push({ id: uid(), subject, location, day: selectedDay, start, end });
+          }
+          save(LS_CLASSES, classes);
+          closeSheet();
+          refreshAll();
+          showToast("Lecture record saved.");
+        });
+
+        if(isEdit) {
+          document.getElementById('deleteClassBtnForm').addEventListener('click', () => {
+            classes = classes.filter(x => x.id !== c.id);
+            save(LS_CLASSES, classes);
+            closeSheet();
+            refreshAll();
+            showToast("Lecture cancelled / deleted.");
+          });
+        }
+      }
+
+      function openDeadlineSheet(d = null) {
+        const isEdit = !!d;
+        const html = `
+          <form id="deadlineForm" onsubmit="return false;">
+            <div class="field">
+              <label>Task Title</label>
+              <input type="text" id="formDlTitle" value="${isEdit ? escapeHtml(d.title) : ''}" required placeholder="e.g. Lab Submission 04">
+            </div>
+            <div class="field">
+              <label>Module / Category</label>
+              <input type="text" id="formDlModule" value="${isEdit ? escapeHtml(d.module) : ''}" placeholder="e.g. Mathematics">
+            </div>
+            <div class="field">
+              <label>Due Date &amp; Time</label>
+              <input type="datetime-local" id="formDlDue" value="${isEdit ? d.due : ''}" required>
+            </div>
+            <button type="button" class="btn btn-primary" id="saveDlBtnForm">Save Deadline</button>
+            ${isEdit ? '<button type="button" class="btn btn-danger" id="deleteDlBtnForm">Delete</button>' : ''}
+          </form>
+        `;
+
+        openSheet(isEdit ? "Modify Deadline" : "Create New Deadline", html);
+
+        document.getElementById('saveDlBtnForm').addEventListener('click', () => {
+          const title = document.getElementById('formDlTitle').value.trim();
+          const module = document.getElementById('formDlModule').value.trim();
+          const due = document.getElementById('formDlDue').value;
+
+          if(!title || !due) { showToast("Title and Date parameter limits required."); return; }
+
+          if(isEdit) {
+            const idx = deadlines.findIndex(x => x.id === d.id);
+            if(idx !== -1) deadlines[idx] = { id: d.id, title, module, due };
+          } else {
+            deadlines.push({ id: uid(), title, module, due });
+          }
+          save(LS_DEADLINES, deadlines);
+          closeSheet();
+          refreshAll();
+          showToast("Deadline tracker saved.");
+        });
+
+        if(isEdit) {
+          document.getElementById('deleteDlBtnForm').addEventListener('click', () => {
+            deadlines = deadlines.filter(x => x.id !== d.id);
+            save(LS_DEADLINES, deadlines);
+            closeSheet();
+            refreshAll();
+            showToast("Deadline clear.");
+          });
+        }
+      }
+
+      function refreshAll() {
+        renderToday();
+        renderBoard();
+        renderDeadlines();
+        renderTimetable();
+        renderTransit();
+        syncIframe();
+      }
+
+      // Vercel-Ready Sandboxed Frame Synchronization Engine
+      let isFrameUpdating = false;
+      function syncIframe() {
+        // BREAKOUT: Stops app from recursively loading itself inside Vercel deployments!
+        if (window.self !== window.top) return; 
+        
+        if (window.location.href === 'about:blank' || isFrameUpdating) return;
+        const frame = document.getElementById('mobileFrame');
+        if (frame) {
+          isFrameUpdating = true;
+          frame.src = window.location.href;
+          frame.onload = () => { isFrameUpdating = false; };
+        }
+      }
+
+      // Dual-Viewport Tab Mapping Switcher Engine
+      function bindTabs() {
+        const tabs = document.querySelectorAll('.tab, .bottom-nav__item');
+        tabs.forEach(tab => {
+          tab.addEventListener('click', function () {
+            const target = this.getAttribute('data-tab');
+            
+            tabs.forEach(t => {
+              if(t.getAttribute('data-tab') === target) t.classList.add('is-active');
+              else t.classList.remove('is-active');
+            });
+
+            document.querySelectorAll('.panel').forEach(p => {
+              p.classList.remove('is-active');
+              if(p.id === `panel-${target}`) p.classList.add('is-active');
+            });
+          });
+        });
+      }
+
+      // DOM Core Lifecycle Initialization Hooks
+      document.addEventListener("DOMContentLoaded", () => {
+        renderDate();
+        bindTabs();
+
+        document.getElementById('sheetBackdrop').addEventListener('click', function(e) {
+          if(e.target === this) closeSheet();
+        });
+
+        document.getElementById('fabBtn').addEventListener('click', () => {
+          const activeTab = document.querySelector('.tab.is-active').getAttribute('data-tab');
+          if(activeTab === 'deadlines') openDeadlineSheet();
+          else openClassSheet();
+        });
+
+        document.getElementById('saveCampusBtn').addEventListener('click', () => {
+          const val = document.getElementById('campusInput').value.trim();
+          settings.campus = val;
+          save(LS_SETTINGS, settings);
+          refreshAll();
+          showToast("Campus location update saved.");
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+          const packageData = { classes, deadlines, settings };
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(packageData));
+          const dlAnchor = document.createElement('a');
+          dlAnchor.setAttribute("href", dataStr);
+          dlAnchor.setAttribute("download", "unipilot_backup.json");
+          dlAnchor.click();
+        });
+
+        document.getElementById('importBtn').addEventListener('click', () => {
+          document.getElementById('importFile').click();
+        });
+
+        document.getElementById('importFile').addEventListener('change', function(e) {
+          const fileReader = new FileReader();
+          fileReader.onload = function(event) {
+            try {
+              const parsed = JSON.parse(event.target.result);
+              if(parsed.classes) { classes = parsed.classes; save(LS_CLASSES, classes); }
+              if(parsed.deadlines) { deadlines = parsed.deadlines; save(LS_DEADLINES, deadlines); }
+              if(parsed.settings) { settings = parsed.settings; save(LS_SETTINGS, settings); }
+              refreshAll();
+              showToast("Data storage structures synced!");
+            } catch(err) {
+              showToast("Invalid JSON Schema format backup.");
+            }
+          };
+          if(e.target.files[0]) fileReader.readAsText(e.target.files[0]);
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+          if(confirm("Wipe all locally stored schedule metrics?")) {
+            localStorage.clear();
+            classes = []; deadlines = []; settings = { campus: "" };
+            refreshAll();
+            showToast("Sandbox data flushed.");
+          }
+        });
+
+        refreshAll();
+        setInterval(renderBoard, 30000); 
+      });
+
+    })();
+  </script>
+</body>
+</html>
